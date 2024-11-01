@@ -4,9 +4,9 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <ModName>ModTemplate</ModName>
+    <ModName>AutoScreenshot</ModName>
     <ModVersion>0.0.1</ModVersion>
-    <Description>A Rhythm Festival template for mod creation.</Description>
+    <Description>A Rhythm Festival mod to take screenshots of any highscores achieved.</Description>
   </PropertyGroup>
   
   <Target Name="UserFile" AfterTargets="PreBuildEvent">

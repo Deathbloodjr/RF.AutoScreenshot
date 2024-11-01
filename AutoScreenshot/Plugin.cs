@@ -4,16 +4,16 @@ using BepInEx;
 using BepInEx.Logging;
 using HarmonyLib;
 using BepInEx.Configuration;
-using ModTemplate.Plugins;
+using AutoScreenshot.Plugins;
 using UnityEngine;
 using System.Collections;
 
-namespace ModTemplate
+namespace AutoScreenshot
 {
     [BepInPlugin(MyPluginInfo.PLUGIN_GUID, ModName, MyPluginInfo.PLUGIN_VERSION)]
     public class Plugin : BasePlugin
     {
-        public const string ModName = "ModTemplate";
+        public const string ModName = "AutoScreenshot";
 
         public static Plugin Instance;
         private Harmony _harmony = null;
@@ -21,8 +21,10 @@ namespace ModTemplate
 
 
         public ConfigEntry<bool> ConfigEnabled;
-        public ConfigEntry<string> ConfigSongTitleLanguageOverride;
-        public ConfigEntry<float> ConfigFlipInterval;
+        public ConfigEntry<bool> ConfigScreenshotHighScores;
+        public ConfigEntry<bool> ConfigScreenshotNewCrowns;
+        public ConfigEntry<bool> ConfigTakeSteamScreenshots;
+        public ConfigEntry<string> ConfigScreenshotFolder;
 
 
 
@@ -45,15 +47,25 @@ namespace ModTemplate
                 true,
                 "Enables the mod.");
 
-            ConfigSongTitleLanguageOverride = Config.Bind("General",
-                "SongTitleLanguageOverride",
-                "JP",
-                "Sets the song title to the selected language. (JP, EN, FR, IT, DE, ES, TW, CN, KO)");
+            ConfigScreenshotHighScores = Config.Bind("General",
+                "ScreenshotHighScores",
+                true,
+                "Enables screenshoting high scores automatically.");
 
-            ConfigFlipInterval = Config.Bind("General",
-                "FlipInterval",
-                3f,
-                "How quickly the difficulty flips between oni and ura.");
+            ConfigScreenshotNewCrowns = Config.Bind("General",
+                "ScreenshotNewCrowns",
+                true,
+                "Enables screenshoting newly obtained crowns automatically.");
+
+            ConfigTakeSteamScreenshots = Config.Bind("General",
+                "TakeSteamScreenshots",
+                true,
+                "Will enable taking steam screenshots in addition to saving images locally.");
+
+            ConfigScreenshotFolder = Config.Bind("General",
+                "ScreenshotFolder",
+                Path.Combine(dataFolder, "Screenshots"),
+                "Enables the example mods.");
         }
 
         private void SetupHarmony()
@@ -65,9 +77,7 @@ namespace ModTemplate
             {
                 bool result = true;
                 // If any PatchFile fails, result will become false
-                result &= PatchFile(typeof(SwapJpEngTitlesPatch));
-                result &= PatchFile(typeof(AdjustUraFlipTimePatch));
-                SwapJpEngTitlesPatch.SetOverrideLanguages();
+                result &= PatchFile(typeof(AutoScreenshotPatch));
                 if (result)
                 {
                     Log.LogInfo($"Plugin {MyPluginInfo.PLUGIN_NAME} is loaded!");
@@ -75,8 +85,6 @@ namespace ModTemplate
                 else
                 {
                     Log.LogError($"Plugin {MyPluginInfo.PLUGIN_GUID} failed to load.");
-                    // Unload this instance of Harmony
-                    // I hope this works the way I think it does
                     _harmony.UnpatchSelf();
                 }
             }
