@@ -7,6 +7,8 @@ using BepInEx.Configuration;
 using AutoScreenshot.Plugins;
 using UnityEngine;
 using System.Collections;
+using SaveProfileManager.Plugins;
+using System.Reflection;
 
 namespace AutoScreenshot
 {
@@ -19,10 +21,12 @@ namespace AutoScreenshot
         private Harmony _harmony = null;
         public new static ManualLogSource Log;
 
+        public static PluginSaveDataInterface plugin;
 
         public ConfigEntry<bool> ConfigEnabled;
         public ConfigEntry<bool> ConfigScreenshotHighScores;
         public ConfigEntry<bool> ConfigScreenshotNewCrowns;
+        public ConfigEntry<bool> ConfigScreenshotEverything;
         public ConfigEntry<bool> ConfigTakeSteamScreenshots;
         public ConfigEntry<string> ConfigScreenshotFolder;
 
@@ -34,38 +38,49 @@ namespace AutoScreenshot
 
             Log = base.Log;
 
-            SetupConfig();
+            SetupConfig(Config, Path.Combine("BepInEx", "data", ModName));
             SetupHarmony();
+
+            var isSaveManagerLoaded = IsSaveManagerLoaded();
+            if (isSaveManagerLoaded)
+            {
+                AddToSaveManager();
+            }
         }
 
-        private void SetupConfig()
+        private void SetupConfig(ConfigFile config, string saveFolder)
         {
-            var dataFolder = Path.Combine("BepInEx", "data", ModName);
+            string dataFolder = Path.Combine("BepInEx", "data", ModName);
 
-            ConfigEnabled = Config.Bind("General",
+            ConfigEnabled = config.Bind("General",
                 "Enabled",
                 true,
                 "Enables the mod.");
 
-            ConfigScreenshotHighScores = Config.Bind("General",
+            ConfigScreenshotHighScores = config.Bind("General",
                 "ScreenshotHighScores",
                 true,
-                "Enables screenshoting high scores automatically.");
+                "Screenshots high scores.");
 
-            ConfigScreenshotNewCrowns = Config.Bind("General",
+            ConfigScreenshotNewCrowns = config.Bind("General",
                 "ScreenshotNewCrowns",
                 true,
-                "Enables screenshoting newly obtained crowns automatically.");
+                "Screenshots newly obtained crowns.");
 
-            ConfigTakeSteamScreenshots = Config.Bind("General",
+            ConfigScreenshotEverything = config.Bind("General",
+                "ScreenshotEverything",
+                false,
+                "Screenshots every score, regardless of if it's a high score or a new crown.");
+
+            ConfigTakeSteamScreenshots = config.Bind("General",
                 "TakeSteamScreenshots",
                 true,
                 "Will enable taking steam screenshots in addition to saving images locally.");
 
-            ConfigScreenshotFolder = Config.Bind("General",
+            ConfigScreenshotFolder = config.Bind("General",
                 "ScreenshotFolder",
-                Path.Combine(dataFolder, "Screenshots"),
-                "Enables the example mods.");
+                Path.Combine(saveFolder, "Screenshots"),
+                "Folder location to place screenshots in.");
         }
 
         private void SetupHarmony()
@@ -73,24 +88,32 @@ namespace AutoScreenshot
             // Patch methods
             _harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
 
-            if (ConfigEnabled.Value)
+            LoadPlugin();
+        }
+
+        public static void LoadPlugin()
+        {
+            if (Instance.ConfigEnabled.Value)
             {
                 bool result = true;
                 // If any PatchFile fails, result will become false
-                result &= PatchFile(typeof(AutoScreenshotPatch));
+                result &= Instance.PatchFile(typeof(AutoScreenshotPatch));
                 if (result)
                 {
-                    Log.LogInfo($"Plugin {MyPluginInfo.PLUGIN_NAME} is loaded!");
+                    Logger.Log($"Plugin {MyPluginInfo.PLUGIN_NAME} is loaded!");
                 }
                 else
                 {
-                    Log.LogError($"Plugin {MyPluginInfo.PLUGIN_GUID} failed to load.");
-                    _harmony.UnpatchSelf();
+                    Logger.Log($"Plugin {MyPluginInfo.PLUGIN_GUID} failed to load.", LogType.Error);
+                    // Unload this instance of Harmony
+                    // I hope this works the way I think it does
+                    Instance._harmony.UnpatchSelf();
                 }
             }
             else
             {
-                Log.LogInfo($"Plugin {MyPluginInfo.PLUGIN_NAME} is disabled.");
+                UnloadPlugin();
+                Logger.Log($"Plugin {MyPluginInfo.PLUGIN_NAME} is disabled.");
             }
         }
 
@@ -104,14 +127,44 @@ namespace AutoScreenshot
             {
                 _harmony.PatchAll(type);
 #if DEBUG
-                Log.LogInfo("File patched: " + type.FullName);
+                Logger.Log("File patched: " + type.FullName);
 #endif
                 return true;
             }
             catch (Exception e)
             {
-                Log.LogInfo("Failed to patch file: " + type.FullName);
-                Log.LogInfo(e.Message);
+                Logger.Log("Failed to patch file: " + type.FullName);
+                Logger.Log(e.Message);
+                return false;
+            }
+        }
+
+        public static void UnloadPlugin()
+        {
+            Instance._harmony.UnpatchSelf();
+            Logger.Log($"Plugin {MyPluginInfo.PLUGIN_NAME} has been unpatched.");
+        }
+
+        public void AddToSaveManager()
+        {
+            plugin = new PluginSaveDataInterface(MyPluginInfo.PLUGIN_GUID);
+            plugin.AssignLoadFunction(LoadPlugin);
+            plugin.AssignUnloadFunction(UnloadPlugin);
+            //plugin.AssignReloadSaveFunction(ReloadPlugin);
+            plugin.AssignConfigSetupFunction(SetupConfig);
+            plugin.AddToManager();
+            Logger.Log("Plugin added to SaveDataManager");
+        }
+
+        private bool IsSaveManagerLoaded()
+        {
+            try
+            {
+                Assembly loadedAssembly = Assembly.Load("com.DB.RF.SaveProfileManager");
+                return loadedAssembly != null;
+            }
+            catch
+            {
                 return false;
             }
         }

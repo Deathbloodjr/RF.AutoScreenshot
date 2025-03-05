@@ -33,15 +33,40 @@ namespace AutoScreenshot.Plugins
         {
             if (!Screenshot.screenshotTaken)
             {
-                if ((Plugin.Instance.ConfigScreenshotHighScores.Value &&
-                        __instance.localResults.ensoPlayerResult[__instance.playerNo].isHiScore) ||
-                        (Plugin.Instance.ConfigScreenshotNewCrowns.Value &&
-                        (__instance.ensoParam.EnsoResult.ensoPlayerResult[__instance.playerNo].isNewCrown[2] || // Silver
-                        __instance.ensoParam.EnsoResult.ensoPlayerResult[__instance.playerNo].isNewCrown[3] || // Gold
-                        __instance.ensoParam.EnsoResult.ensoPlayerResult[__instance.playerNo].isNewCrown[4])))   // Rainbow
+                var playerResult = __instance.localResults.ensoPlayerResult[__instance.playerNo];
+
+                bool takeScreenshot = false;
+                if (Plugin.Instance.ConfigScreenshotEverything.Value)
+                {
+                    takeScreenshot = true;
+                    Logger.Log("Screenshot because ScreenshotEverything == true", LogType.Debug);
+                }
+                if (Plugin.Instance.ConfigScreenshotHighScores.Value)
+                {
+                    var prevHighScore = TaikoSingletonMonoBehaviour<CommonObjects>.Instance.MyDataManager.EnsoData.ensoSettings.ensoPlayerSettings[__instance.playerNo].hiScore;
+                    if (playerResult.score > prevHighScore)
+                    {
+                        takeScreenshot = true;
+                        Logger.Log("Screenshot because playerResult.score > prevHighScore", LogType.Debug);
+                    }
+                }
+                if (Plugin.Instance.ConfigScreenshotNewCrowns.Value)
+                {
+                    for (int i = 0; i < playerResult.isNewCrown.Length; i++)
+                    {
+                        if (playerResult.isNewCrown[i])
+                        {
+                            takeScreenshot = true;
+                            Logger.Log("Screenshot because isNewCrown[" + i + "] == true", LogType.Debug);
+                        }
+                    }
+                }
+
+
+                if (takeScreenshot)
                 {
                     TaikoSingletonMonoBehaviour<SaveIcon>.Instance.Deactive();
-                    Screenshot.TakeScreenshot();
+                    Screenshot.TakeScreenshot(Plugin.Instance.ConfigScreenshotFolder.Value);
                 }
             }
         }

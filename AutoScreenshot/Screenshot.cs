@@ -1,4 +1,5 @@
-﻿using Steamworks;
+﻿using SaveProfileManager.Plugins;
+using Steamworks;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,12 +22,7 @@ namespace AutoScreenshot
             if (Plugin.Instance.ConfigEnabled.Value)
             {
                 var now = DateTime.Now;
-                string fileName = now.Year.ToString() + "-"
-                                + now.Month.ToString() + "-"
-                                + now.Day.ToString() + "-"
-                                + now.Hour.ToString() + "-"
-                                + now.Minute.ToString() + "-"
-                                + now.Second.ToString() + ".png";
+                string fileName = now.ToString("yyyy-MM-dd_HH-mm-ss") + ".png";
 
                 if (folderPath == "")
                 {
@@ -37,6 +33,7 @@ namespace AutoScreenshot
                 {
                     Directory.CreateDirectory(folderPath);
                 }
+
                 ScreenCapture.CaptureScreenshot(Path.GetFullPath(Path.Combine(folderPath, fileName)));
                 if (Plugin.Instance.ConfigTakeSteamScreenshots.Value)
                 {
@@ -44,7 +41,8 @@ namespace AutoScreenshot
                 }
                 screenshotTaken = true;
 
-                //Plugin.LogInfo("Screenshot saved to: " + Path.Combine(Plugin.Instance.ConfigScreenshotFolder.Value, fileName));
+                Logger.Log("Screenshot taken");
+                //Logger.Log("Screenshot saved to: " + Path.Combine(Plugin.Instance.ConfigScreenshotFolder.Value, fileName));
             }
         }
     }
