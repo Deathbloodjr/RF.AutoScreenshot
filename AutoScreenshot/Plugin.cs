@@ -74,7 +74,7 @@ namespace AutoScreenshot
 
             ConfigTakeSteamScreenshots = config.Bind("General",
                 "TakeSteamScreenshots",
-                true,
+                false,
                 "Will enable taking steam screenshots in addition to saving images locally.");
 
             ConfigScreenshotFolder = config.Bind("General",
