@@ -155,8 +155,7 @@ namespace AutoScreenshot
             plugin.AssignUnloadFunction(UnloadPlugin);
             //plugin.AssignReloadSaveFunction(ReloadPlugin);
             plugin.AssignConfigSetupFunction(SetupConfig);
-            plugin.AddToManager();
-            Logger.Log("Plugin added to SaveDataManager");
+            plugin.AddToManager(ConfigEnabled.Value);
         }
 
         private bool IsSaveManagerLoaded()
