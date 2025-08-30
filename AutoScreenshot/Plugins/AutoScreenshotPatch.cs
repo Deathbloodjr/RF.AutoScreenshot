@@ -2,10 +2,12 @@
 using Scripts.OutGame.SongSelect;
 using Steamworks;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace AutoScreenshot.Plugins
 {
@@ -17,15 +19,31 @@ namespace AutoScreenshot.Plugins
         [HarmonyPrefix]
         public static void ResultPlayer_ToWaitState_Prefix(ResultPlayer __instance)
         {
-            TakeScreenshot(__instance);
+            // This caused the 000000 score issue
+            if (!screenshotSkipped)
+            {
+                Logger.Log("ResultPlayer_ToWaitState_Prefix", LogType.Debug);
+                TakeScreenshot(__instance);
+            }
+            screenshotSkipped = false;
         }
 
+        static bool screenshotSkipped = false;
+
         [HarmonyPatch(typeof(ResultPlayer))]
-        [HarmonyPatch(nameof(ResultPlayer.waitResultDisp))]
+        [HarmonyPatch(nameof(ResultPlayer.SkipDispResult))]
         [HarmonyPatch(MethodType.Normal)]
-        [HarmonyPrefix]
-        public static void ResultPlayer_waitResultDisp_Prefix(ResultPlayer __instance)
+        [HarmonyPostfix]
+        public static void ResultPlayer_SkipDispResult_Postfix(ResultPlayer __instance)
         {
+            screenshotSkipped = true;
+            Logger.Log("ResultPlayer_SkipDispResult_Postfix", LogType.Debug);
+            Plugin.Instance.StartCoroutine(DelayTakeScreenshot(__instance));
+        }
+
+        private static IEnumerator DelayTakeScreenshot(ResultPlayer __instance)
+        {
+            yield return new WaitForSeconds(0.4f);
             TakeScreenshot(__instance);
         }
 

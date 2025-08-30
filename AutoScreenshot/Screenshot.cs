@@ -22,7 +22,7 @@ namespace AutoScreenshot
             if (Plugin.Instance.ConfigEnabled.Value)
             {
                 var now = DateTime.Now;
-                string fileName = now.ToString("yyyy-MM-dd_HH-mm-ss") + ".png";
+                string fileName = now.ToString("yyyy-MM-dd HH-mm-ss") + ".png";
 
                 if (folderPath == "")
                 {
