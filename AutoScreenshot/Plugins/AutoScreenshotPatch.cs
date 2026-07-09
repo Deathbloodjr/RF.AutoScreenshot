@@ -13,6 +13,9 @@ namespace AutoScreenshot.Plugins
 {
     internal class AutoScreenshotPatch
     {
+        static bool screenshotSkipped = false;
+        static bool screenshotTaken = false;
+
         [HarmonyPatch(typeof(ResultPlayer))]
         [HarmonyPatch(nameof(ResultPlayer.ToWaitState))]
         [HarmonyPatch(MethodType.Normal)]
@@ -28,7 +31,6 @@ namespace AutoScreenshot.Plugins
             screenshotSkipped = false;
         }
 
-        static bool screenshotSkipped = false;
 
         [HarmonyPatch(typeof(ResultPlayer))]
         [HarmonyPatch(nameof(ResultPlayer.SkipDispResult))]
@@ -49,7 +51,7 @@ namespace AutoScreenshot.Plugins
 
         private static void TakeScreenshot(ResultPlayer __instance)
         {
-            if (!Screenshot.screenshotTaken)
+            if (!screenshotTaken)
             {
                 var playerResult = __instance.localResults.ensoPlayerResult[__instance.playerNo];
 
@@ -61,6 +63,7 @@ namespace AutoScreenshot.Plugins
                 }
                 if (Plugin.Instance.ConfigScreenshotHighScores.Value)
                 {
+                    // I wonder if this has issues with nijiiro scoring?
                     var prevHighScore = TaikoSingletonMonoBehaviour<CommonObjects>.Instance.MyDataManager.EnsoData.ensoSettings.ensoPlayerSettings[__instance.playerNo].hiScore;
                     if (playerResult.score > prevHighScore)
                     {
@@ -95,7 +98,7 @@ namespace AutoScreenshot.Plugins
         [HarmonyPrefix]
         public static void ResultPlayer_Start_Prefix(ResultPlayer __instance)
         {
-            Screenshot.screenshotTaken = false;
+            screenshotTaken = false;
         }
     }
 }

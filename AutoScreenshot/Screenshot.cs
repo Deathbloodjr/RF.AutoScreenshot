@@ -11,7 +11,6 @@ namespace AutoScreenshot
 {
     public class Screenshot
     {
-        internal static bool screenshotTaken = false;
 
         /// <summary>
         /// 
@@ -39,7 +38,6 @@ namespace AutoScreenshot
                 {
                     SteamScreenshots.TriggerScreenshot();
                 }
-                screenshotTaken = true;
 
                 Logger.Log("Screenshot taken");
                 //Logger.Log("Screenshot saved to: " + Path.Combine(Plugin.Instance.ConfigScreenshotFolder.Value, fileName));
